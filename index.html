@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Криптобиржа с графиками</title>
+<style>
+  body {
+    margin: 0; padding: 0; background: #1a1d29; color: #eee; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  header {
+    background: #121523;
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px #0008;
+  }
+  header .logo {
+    font-weight: 700;
+    font-size: 24px;
+    color: #f3ba2f;
+    text-decoration: none;
+  }
+  nav a {
+    color: #eee;
+    margin-left: 30px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  nav a.active {
+    color: #f3ba2f;
+    border-bottom: 2px solid #f3ba2f;
+    padding-bottom: 4px;
+  }
+  .main {
+    display: flex;
+    padding: 20px 40px;
+    gap: 40px;
+    min-height: 80vh;
+  }
+  aside.sidebar {
+    width: 320px;
+    background: #232731;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  #login-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  #login-section input {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: none;
+    background: #1a1d29;
+    color: #eee;
+    font-size: 16px;
+  }
+  #login-section button {
+    background: #f3ba2f;
+    border: none;
+    padding: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: 0.3s;
+  }
+  #login-section button:hover {
+    background: #d9a619;
+  }
+  #profile {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+  }
+  #profile h3 {
+    margin: 0;
+    color: #f3ba2f;
+  }
+  .profile-info div {
+    font-size: 15px;
+  }
+  .balance-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(130px,1fr));
+    gap: 14px;
+    margin-top: 10px;
+  }
+  .card {
+    background: #292d38;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 0 10px #f3ba2f33;
+    user-select: none;
+  }
+  .card-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+  .card-value {
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  .crypto-balance {
+    font-size: 13px;
+    color: #bbb;
+  }
+  .progress-bar {
+    background: #1a1d29;
+    height: 6px;
+    border-radius: 5px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    background: #f3ba2f;
+    height: 100%;
+  }
+  .content {
+    flex-grow: 1;
+  }
+  #crypto-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(110px,1fr));
+    gap: 16px;
+    margin-top: 10px;
+  }
+  .crypto-card {
+    background: #292d38;
+    border-radius: 12px;
+    padding: 15px;
+    cursor: pointer;
+    text-align: center;
+    user-select: none;
+    transition: background 0.3s;
+  }
+  .crypto-card:hover {
+    background: #3b3f54;
+  }
+  .crypto-symbol {
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+  .price {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+  .change {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .change.up {
+    color: #16c784;
+  }
+  .change.down {
+    color: #ea3943;
+  }
+  #chart-container {
+    background: #232731;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 30px;
+  }
+  #chart-title {
+    color: #f3ba2f;
+    margin-bottom: 10px;
+    font-weight: 700;
+    font-size: 20px;
+  }
+  canvas {
+    user-select: none;
+  }
+
+  /* Биржа */
+  .exchange {
+    display: none;
+    background: #232731;
+    padding: 25px;
+    border-radius: 12px;
+  }
+  .trade-panel {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+  .trade-panel > div {
+    flex: 1 1 200px;
+    display: flex;
+    flex-direction: column;
+  }
+  .trade-panel label {
+    margin-bottom: 6px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .trade-panel input, .trade-panel select {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: #1a1d29;
+    color: #eee;
+    font-size: 16px;
+  }
+  .trade-buttons {
+    display: flex;
+    gap: 20px;
+  }
+  .trade-buttons button {
+    flex: 1;
+    padding: 14px 0;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 18px;
+    border: none;
+    color: #292d38;
+    background: #f3ba2f;
+    cursor: pointer;
+    user-select: none;
+    transition: 0.3s;
+  }
+  .trade-buttons button:hover {
+    background: #d9a619;
+    box-shadow: 0 0 20px #d9a619;
+  }
+  #trade-result {
+    margin-top: 20px;
+    font-weight: 700;
+    font-size: 16px;
+    min-height: 24px;
+    user-select: none;
+  }
+  table.orders {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 30px;
+    color: #ccc;
+    font-size: 15px;
+  }
+  table.orders thead {
+    border-bottom: 2px solid #f3ba2f;
+  }
+  table.orders th, table.orders td {
+    padding: 12px 15px;
+    text-align: left;
+    border-right: 1px solid #333;
+  }
+  table.orders th:last-child, table.orders td:last-child {
+    border-right: none;
+  }
+  table.orders tbody tr:hover {
+    background: #2a2c36;
+  }
+  .order-type-buy {
+    color: #16c784;
+    font-weight: 700;
+  }
+  .order-type-sell {
+    color: #ea3943;
+    font-weight: 700;
+  }
+
+  @media (max-width: 920px) {
+    .main {
+      flex-direction: column;
+      padding: 20px;
+    }
+    .sidebar {
+      width: 100%;
+      flex: none;
+      margin-bottom: 30px;
+    }
+    .exchange {
+      width: 100%;
+      max-height: none;
+      padding: 20px;
+    }
+    .trade-panel {
+      flex-direction: column;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="#" class="logo">BogdanBirzga #нескам</a>
+  <nav>
+    <a href="#" id="nav-home" class="active">Главная</a>
+    <a href="#" id="nav-exchange">Биржа</a>
+  </nav>
+</header>
+
+<div class="main">
+
+  <aside class="sidebar">
+
+    <section id="login-section">
+      <h2>Вход в аккаунт</h2>
+      <input type="text" id="usernameInput" placeholder="Введите ник" autocomplete="off" />
+      <button id="loginBtn">Войти</button>
+    </section>
+
+    <section id="profile">
+      <h3>Профиль пользователя</h3>
+      <div class="profile-info">
+        <div><strong>ID:</strong> <span id="user-id"></span></div>
+        <div><strong>Ник:</strong> <span id="user-name"></span></div>
+        <div><strong>Баланс USD:</strong> $<span id="user-balance-usd"></span></div>
+      </div>
+      <div class="balance-cards" id="crypto-balances-cards">
+        <!-- Балансы криптовалют -->
+      </div>
+    </section>
+
+  </aside>
+
+  <section class="content" id="home-section">
+    <h2>Текущие курсы криптовалют</h2>
+    <div id="crypto-list"></div>
+
+    <div id="chart-container" style="display:none;">
+      <div id="chart-title"></div>
+      <canvas id="priceChart" width="600" height="300"></canvas>
+    </div>
+  </section>
+
+  <section class="exchange" id="exchange-section">
+    <h2>Биржа — Покупка и продажа криптовалют</h2>
+    <div class="trade-panel">
+      <div>
+        <label for="crypto-select">Выберите криптовалюту</label>
+        <select id="crypto-select"></select>
+      </div>
+      <div>
+        <label for="trade-amount">Количество</label>
+        <input type="number" id="trade-amount" min="0" step="any" placeholder="Введите количество" />
+      </div>
+      <div>
+        <label>Итоговая сумма (USD)</label>
+        <input type="text" id="trade-total" readonly />
+      </div>
+    </div>
+    <div class="trade-buttons">
+      <button id="buy-btn">Купить</button>
+      <button id="sell-btn">Продать</button>
+    </div>
+    <div id="trade-result"></div>
+
+    <h3 style="margin-top: 40px; color:#f3ba2f;">История ордеров</h3>
+    <table class="orders" id="orders-table">
+      <thead>
+        <tr>
+          <th>Тип</th>
+          <th>Криптовалюта</th>
+          <th>Количество</th>
+          <th>Цена за 1 (USD)</th>
+          <th>Общая сумма (USD)</th>
+          <th>Время</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const cryptos = [
+    { symbol: "BTC", name: "Bitcoin", price: 26856.23, change: 1.2 },
+    { symbol: "ETH", name: "Ethereum", price: 1723.55, change: -0.9 },
+    { symbol: "BNB", name: "Binance Coin", price: 309.12, change: 2.5 },
+    { symbol: "USDT", name: "Tether", price: 1.0, change: 0 },
+    { symbol: "SOL", name: "Solana", price: 23.74, change: -1.1 },
+    { symbol: "DOGE", name: "Dogecoin", price: 0.064, change: 0.8 },
+    { symbol: "ADA", name: "Cardano", price: 0.36, change: -0.7 },
+    { symbol: "XRP", name: "Ripple", price: 0.52, change: 0.4 },
+    { symbol: "DOT", name: "Polkadot", price: 6.74, change: -1.3 },
+    { symbol: "LTC", name: "Litecoin", price: 85.34, change: 1.5 },
+    { symbol: "AVAX", name: "Avalanche", price: 16.45, change: 2.1 },
+    { symbol: "SHIB", name: "Shiba Inu", price: 0.0000075, change: 3.2 },
+    { symbol: "MATIC", name: "Polygon", price: 0.86, change: -0.5 },
+    { symbol: "ATOM", name: "Cosmos", price: 10.55, change: 0.9 }
+  ];
+
+  let loggedInUser = null;
+  let userBalance = 950000;
+  let userCryptoBalances = {};
+  let orderHistory = [];
+  let priceChart = null;
+
+  function initUserBalances() {
+    userCryptoBalances = {};
+    cryptos.forEach(c => userCryptoBalances[c.symbol] = 0);
+  }
+
+  function updateProfile() {
+    if (!loggedInUser) return;
+    document.getElementById("user-id").textContent = loggedInUser.id;
+    document.getElementById("user-name").textContent = loggedInUser.name;
+    document.getElementById("user-balance-usd").textContent = userBalance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+
+    const container = document.getElementById("crypto-balances-cards");
+    container.innerHTML = "";
+    cryptos.forEach(c => {
+      const val = userCryptoBalances[c.symbol];
+      const totalValue = val * c.price;
+      const usdPortion = totalValue / (userBalance + totalValue) * 100 || 0;
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.innerHTML = `
+        <div class="card-title">${c.name} (${c.symbol})</div>
+        <div class="card-value">${val.toFixed(6)}</div>
+        <div class="crypto-balance">
+          <div class="balance-label">
+            <span>Рыночная стоимость (USD)</span>
+            <span>$${totalValue.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${usdPortion}%;"></div>
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function renderCryptoList() {
+    const list = document.getElementById("crypto-list");
+    list.innerHTML = "";
+    cryptos.forEach(c => {
+      const card = document.createElement("div");
+      card.className = "crypto-card";
+      card.dataset.symbol = c.symbol;
+      card.title = c.name;
+
+      card.innerHTML = `
+        <div class="crypto-symbol">${c.symbol}</div>
+        <div class="price">$${c.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+        <div class="change ${c.change >= 0 ? "up" : "down"}">${c.change > 0 ? "▲" : c.change < 0 ? "▼" : ""} ${Math.abs(c.change).toFixed(2)}%</div>
+      `;
+
+      card.addEventListener("click", () => {
+        showPriceChart(c.symbol);
+      });
+
+      list.appendChild(card);
+    });
+  }
+
+  function populateCryptoSelect() {
+    const select = document.getElementById("crypto-select");
+    select.innerHTML = "";
+    cryptos.forEach(c => {
+      const option = document.createElement("option");
+      option.value = c.symbol;
+      option.textContent = `${c.name} (${c.symbol})`;
+      select.appendChild(option);
+    });
+  }
+
+  function generateFakePriceData(basePrice) {
+    // Создаем массив из 30 точек с небольшими случайными изменениями цены для примера
+    const points = [];
+    let price = basePrice;
+    for (let i = 0; i < 30; i++) {
+      const changePercent = (Math.random() - 0.5) * 0.05; // -2.5% ... +2.5%
+      price = price * (1 + changePercent);
+      points.push(price);
+    }
+    return points;
+  }
+
+  function showPriceChart(symbol) {
+    const crypto = cryptos.find(c => c.symbol === symbol);
+    if (!crypto) return;
+
+    const prices = generateFakePriceData(crypto.price);
+    const labels = Array.from({ length: prices.length }, (_, i) => `-${prices.length - i} дн.`);
+
+    document.getElementById("chart-title").textContent = `${crypto.name} (${crypto.symbol}) — История цен (пример)`;
+    document.getElementById("chart-container").style.display = "block";
+
+    if (priceChart) {
+      priceChart.destroy();
+    }
+
+    const ctx = document.getElementById("priceChart").getContext("2d");
+    priceChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          label: `${crypto.symbol} цена (USD)`,
+          data: prices,
+          borderColor: "#f3ba2f",
+          backgroundColor: "rgba(243,186,47,0.2)",
+          tension: 0.3,
+          fill: true,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: false,
+            ticks: {
+              color: "#eee"
+            },
+            grid: {
+              color: "#333"
+            }
+          },
+          x: {
+            ticks: {
+              color: "#eee"
+            },
+            grid: {
+              color: "#333"
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: { color: "#f3ba2f", font: {weight: 'bold'} }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: '#292d38',
+            titleColor: '#f3ba2f',
+            bodyColor: '#eee'
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          intersect: false
+        }
+      }
+    });
+  }
+
+  // Обновляем итоговую сумму при вводе количества
+  function updateTradeTotal() {
+    const select = document.getElementById("crypto-select");
+    const amountInput = document.getElementById("trade-amount");
+    const totalInput = document.getElementById("trade-total");
+    const crypto = cryptos.find(c => c.symbol === select.value);
+    let amount = parseFloat(amountInput.value);
+    if (!crypto || isNaN(amount) || amount <= 0) {
+      totalInput.value = "";
+      return;
+    }
+    const total = crypto.price * amount;
+    totalInput.value = total.toFixed(2);
+  }
+
+  // Покупка крипты
+  function buyCrypto() {
+    const cryptoSymbol = document.getElementById("crypto-select").value;
+    const amount = parseFloat(document.getElementById("trade-amount").value);
+    if (isNaN(amount) || amount <= 0) {
+      alert("Введите корректное количество");
+      return;
+    }
+    const crypto = cryptos.find(c => c.symbol === cryptoSymbol);
+    if (!crypto) return;
+    const cost = amount * crypto.price;
+
+    if (cost > userBalance) {
+      alert("Недостаточно средств для покупки");
+      return;
+    }
+
+    userBalance -= cost;
+    userCryptoBalances[cryptoSymbol] += amount;
+
+    addOrder("Покупка", cryptoSymbol, amount, crypto.price);
+    updateProfile();
+    document.getElementById("trade-result").textContent = `Вы купили ${amount.toFixed(6)} ${cryptoSymbol} за $${cost.toFixed(2)}.`;
+  }
+
+  // Продажа крипты
+  function sellCrypto() {
+    const cryptoSymbol = document.getElementById("crypto-select").value;
+    const amount = parseFloat(document.getElementById("trade-amount").value);
+    if (isNaN(amount) || amount <= 0) {
+      alert("Введите корректное количество");
+      return;
+    }
+    if (userCryptoBalances[cryptoSymbol] < amount) {
+      alert("Недостаточно криптовалюты для продажи");
+      return;
+    }
+    const crypto = cryptos.find(c => c.symbol === cryptoSymbol);
+    if (!crypto) return;
+    const revenue = amount * crypto.price;
+
+    userBalance += revenue;
+    userCryptoBalances[cryptoSymbol] -= amount;
+
+    addOrder("Продажа", cryptoSymbol, amount, crypto.price);
+    updateProfile();
+    document.getElementById("trade-result").textContent = `Вы продали ${amount.toFixed(6)} ${cryptoSymbol} за $${revenue.toFixed(2)}.`;
+  }
+
+  function addOrder(type, symbol, amount, price) {
+    const order = {
+      type,
+      symbol,
+      amount,
+      price,
+      time: new Date()
+    };
+    orderHistory.unshift(order);
+    renderOrders();
+  }
+
+  function renderOrders() {
+    const tbody = document.querySelector("#orders-table tbody");
+    tbody.innerHTML = "";
+    orderHistory.forEach(o => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="order-type-${o.type === "Покупка" ? "buy" : "sell"}">${o.type}</td>
+        <td>${o.symbol}</td>
+        <td>${o.amount.toFixed(6)}</td>
+        <td>$${o.price.toFixed(2)}</td>
+        <td>$${(o.price * o.amount).toFixed(2)}</td>
+        <td>${o.time.toLocaleString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Логика входа
+  document.getElementById("loginBtn").addEventListener("click", () => {
+    const username = document.getElementById("usernameInput").value.trim();
+    if (!username) {
+      alert("Введите ник");
+      return;
+    }
+    loggedInUser = {
+      id: Math.floor(Math.random() * 1000000),
+      name: username
+    };
+    userBalance = 950000;
+    initUserBalances();
+
+    document.getElementById("login-section").style.display = "none";
+    document.getElementById("profile").style.display = "flex";
+    updateProfile();
+  });
+
+  // Навигация
+  const navHome = document.getElementById("nav-home");
+  const navExchange = document.getElementById("nav-exchange");
+  const homeSection = document.getElementById("home-section");
+  const exchangeSection = document.getElementById("exchange-section");
+
+  navHome.addEventListener("click", (e) => {
+    e.preventDefault();
+    navHome.classList.add("active");
+    navExchange.classList.remove("active");
+    homeSection.style.display = "block";
+    exchangeSection.style.display = "none";
+  });
+
+  navExchange.addEventListener("click", (e) => {
+    e.preventDefault();
+    navExchange.classList.add("active");
+    navHome.classList.remove("active");
+    homeSection.style.display = "none";
+    exchangeSection.style.display = "block";
+  });
+
+  // Обновляем итог при вводе
+  document.getElementById("trade-amount").addEventListener("input", updateTradeTotal);
+  document.getElementById("crypto-select").addEventListener("change", updateTradeTotal);
+
+  // Покупка / Продажа
+  document.getElementById("buy-btn").addEventListener("click", buyCrypto);
+  document.getElementById("sell-btn").addEventListener("click", sellCrypto);
+
+  // Инициализация
+  renderCryptoList();
+  populateCryptoSelect();
+
+</script>
+<script>
+  document.getElementById("loginBtn").addEventListener("click", function() {
+    const message = document.createElement("div");
+    message.textContent = "Зря ты нажал, все твои данные уже у меня";
+    message.style.position = "fixed";
+    message.style.top = 0;
+    message.style.left = 0;
+    message.style.width = "100vw";
+    message.style.height = "100vh";
+    message.style.backgroundColor = "black";
+    message.style.color = "red";
+    message.style.fontSize = "36px";
+    message.style.display = "flex";
+    message.style.alignItems = "center";
+    message.style.justifyContent = "center";
+    message.style.zIndex = 9999;
+    message.style.textAlign = "center";
+    message.style.padding = "20px";
+
+    document.body.appendChild(message);
+
+    setTimeout(() => {
+      message.remove();
+    }, 3000);
+  });
+</script>
+
+
+
+</body>
+</html>
